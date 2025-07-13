@@ -3,13 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <title>Prediction Result</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
     <div class="container">
-        <h1>Prediction Result</h1>
-        <p class="result">{{ prediction_text }}</p>
-        <a href="/" class="btn back-btn">Try Again</a>
+        <h1>🩺 Prediction Result</h1>
+        <p style="font-size: 20px;">{{ prediction_text }}</p>
+        <br>
+        <a href="/" style="text-decoration:none;">
+            <button>🔙 Predict Again</button>
+        </a>
     </div>
 </body>
 </html>

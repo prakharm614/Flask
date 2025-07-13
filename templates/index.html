@@ -1,110 +1,117 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>BP Stage Predictor</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hypertension Stage Predictor</title>
+    <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
-  <div class="container">
-    <h1>Blood Pressure Stage Predictor</h1>
-    <form action="/predict" method="post">
-      <!-- Gender -->
-      <div class="input-group">
-        <label>Gender:</label>
-        <select name="Gender" required>
-          <option value="" disabled selected>Select gender</option>
-          <option value="0">Male</option>
-          <option value="1">Female</option>
-        </select>
-      </div>
-      <!-- Age Range -->
-      <div class="input-group">
-        <label>Age Group:</label>
-        <select name="Age" required>
-          <option value="" disabled selected>Select age range</option>
-          <option value="0">15-25</option>
-          <option value="1">25-35</option>
-          <option value="2">35-45</option>
-          <option value="3">45-55</option>
-          <option value="4">55-65</option>
-          <option value="5">65+</option>
-        </select>
-      </div>
-      <!-- History -->
-      <div class="input-group">
-        <label>Past Medical History:</label>
-        <select name="History" required>
-          <option value="" disabled selected>Yes or No?</option>
-          <option value="0">No</option>
-          <option value="1">Yes</option>
-        </select>
-      </div>
-      <!-- Take Medication -->
-      <div class="input-group">
-        <label>Taking Medication:</label>
-        <select name="TakeMedication" required>
-          <option value="" disabled selected>Yes or No?</option>
-          <option value="0">No</option>
-          <option value="1">Yes</option>
-        </select>
-      </div>
-      <!-- Patient Type -->
-      <div class="input-group">
-        <label>Patient Type (0–5):</label>
-        <input type="number" name="Patient" min="0" max="5" placeholder="0–5" required>
-      </div>
-      <!-- Severity -->
-      <div class="input-group">
-        <label>Severity (0–3):</label>
-        <input type="number" name="Severity" min="0" max="3" placeholder="0–3" required>
-      </div>
-      <!-- Breath Shortness -->
-      <div class="input-group">
-        <label>Breath Shortness:</label>
-        <select name="BreathShortness" required>
-          <option value="" disabled selected>Yes or No?</option>
-          <option value="0">No</option>
-          <option value="1">Yes</option>
-        </select>
-      </div>
-      <!-- Visual Changes -->
-      <div class="input-group">
-        <label>Visual Changes:</label>
-        <select name="VisualChanges" required>
-          <option value="" disabled selected>Yes or No?</option>
-          <option value="0">No</option>
-          <option value="1">Yes</option>
-        </select>
-      </div>
-      <!-- Nose Bleeding -->
-      <div class="input-group">
-        <label>Nose Bleeding:</label>
-        <select name="NoseBleeding" required>
-          <option value="" disabled selected>Yes or No?</option>
-          <option value="0">No</option>
-          <option value="1">Yes</option>
-        </select>
-      </div>
-      <!-- Years Since Diagnosis -->
-      <div class="input-group">
-        <label>Years Since Diagnosis:</label>
-        <input type="number" name="Whendiagnoused" min="0" max="50" placeholder="e.g., 2" required>
-      </div>
-      <!-- Systolic -->
-      <div class="input-group">
-        <label>Systolic (mm Hg):</label>
-        <input type="number" name="Systolic" min="0" placeholder="e.g., 120" required>
-      </div>
-      <!-- Diastolic -->
-      <div class="input-group">
-        <label>Diastolic (mm Hg):</label>
-        <input type="number" name="Diastolic" min="0" placeholder="e.g., 80" required>
-      </div>
-      <!-- Controlled Diet -->
-      <div class="input-group">
-        <label>On Controlled Diet:</label>
-        <select name="ControlledDiet" required>
-          <option value="" disabled selected>Yes or No?</option>
-          <option value="0">No</option>
-          <option value="1">
+    <div class="container">
+        <h1>🩺 Hypertension Stage Predictor</h1>
+        <form action="/predict" method="POST">
+            <div class="form-group">
+                <label>Gender:</label>
+                <select name="Gender" required>
+                    <option value="0">Male</option>
+                    <option value="1">Female</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Age Group:</label>
+                <select name="Age" required>
+                    <option value="0">15-25</option>
+                    <option value="1">25-35</option>
+                    <option value="2">35-45</option>
+                    <option value="3">45-55</option>
+                    <option value="4">55-65</option>
+                    <option value="5">65+</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Do you have a history of hypertension?</label>
+                <select name="History" required>
+                    <option value="1">Yes</option>
+                    <option value="0">No</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Are you a regular patient?</label>
+                <select name="Patient" required>
+                    <option value="1">Yes</option>
+                    <option value="0">No</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Take Medication:</label>
+                <select name="TakeMedication" required>
+                    <option value="1">Yes</option>
+                    <option value="0">No</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Severity:</label>
+                <select name="Severity" required>
+                    <option value="0">Mild</option>
+                    <option value="1">Moderate</option>
+                    <option value="2">Severe</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Breath Shortness:</label>
+                <select name="BreathShortness" required>
+                    <option value="1">Yes</option>
+                    <option value="0">No</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Visual Changes:</label>
+                <select name="VisualChanges" required>
+                    <option value="1">Yes</option>
+                    <option value="0">No</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Nose Bleeding:</label>
+                <select name="NoseBleeding" required>
+                    <option value="1">Yes</option>
+                    <option value="0">No</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>When Diagnosed (Months Ago):</label>
+                <input type="number" name="Whendiagnoused" placeholder="e.g. 6" required>
+            </div>
+
+            <div class="form-group">
+                <label>Systolic Blood Pressure:</label>
+                <input type="number" name="Systolic" placeholder="e.g. 120" required>
+            </div>
+
+            <div class="form-group">
+                <label>Diastolic Blood Pressure:</label>
+                <input type="number" name="Diastolic" placeholder="e.g. 80" required>
+            </div>
+
+            <div class="form-group">
+                <label>Controlled Diet:</label>
+                <select name="ControlledDiet" required>
+                    <option value="1">Yes</option>
+                    <option value="0">No</option>
+                </select>
+            </div>
+
+            <button type="submit">Predict Stage</button>
+        </form>
+    </div>
+</body>
+</html>

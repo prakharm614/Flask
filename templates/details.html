@@ -1,20 +1,20 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
     <meta charset="UTF-8">
-    <title>Project Details</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <title>App Info</title>
+    <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
     <div class="container">
-        <h1>About This Project</h1>
-        <p>This ML-powered web app predicts hypertension stages based on symptoms and vital signs.</p>
+        <h1>ℹ️ About This Predictor</h1>
+        <p>This application predicts the Hypertension Stage based on user health metrics like blood pressure, symptoms, and lifestyle factors. Built using:</p>
         <ul>
-            <li>Models: Logistic Regression, Random Forest, Naive Bayes, etc.</li>
-            <li>Frameworks: Flask, Scikit-learn, Pandas</li>
-            <li>Predictive accuracy ~97–100% on test data</li>
+            <li>Python & Flask</li>
+            <li>Pandas, Scikit-learn</li>
+            <li>HTML/CSS</li>
         </ul>
-        <a href="/" class="btn back-btn">Back to Home</a>
+        <a href="/"><button>Back to Home</button></a>
     </div>
 </body>
 </html>
