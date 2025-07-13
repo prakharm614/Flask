@@ -7,7 +7,6 @@ A machine learning-powered Flask web application that predicts the hypertension 
 --------------
 
 - Home Page: screenshots/home.png
-- Input Form: screenshots/form.png
 - Prediction Result: screenshots/predict.png
 
 🚀 Features
