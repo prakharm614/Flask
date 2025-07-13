@@ -210,3 +210,9 @@ sample = x_test.iloc[0].values.reshape(1, -1)
 predicted_stage = best_rf.predict(sample)[0]
 print("\n📌 Predicted Stage for Sample Input:", predicted_stage)
 
+
+# Deployment
+# saving the best model
+import pickle
+import warnings
+pickle.dump(random_forest,open("model.pkl","wb"))
