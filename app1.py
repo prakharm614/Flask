@@ -216,3 +216,16 @@ print("\n📌 Predicted Stage for Sample Input:", predicted_stage)
 import pickle
 import warnings
 pickle.dump(random_forest,open("model.pkl","wb"))
+
+
+from flask import Flask, request, render_template
+
+app=Flask(__name__,static_url_path='/Flask/static')
+model= pickle.load(open('model.pkl','rb'))
+
+# Rendering HTML Page->route to display home page
+@app.route('/') 
+def home():
+    return render_template('index.html')
+
+
