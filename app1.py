@@ -209,3 +209,4 @@ print("\n📃 Classification Report:\n", classification_report(y_test, y_pred_be
 sample = x_test.iloc[0].values.reshape(1, -1)
 predicted_stage = best_rf.predict(sample)[0]
 print("\n📌 Predicted Stage for Sample Input:", predicted_stage)
+
