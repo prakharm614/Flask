@@ -3,84 +3,84 @@
 # ------------------------------------------
 import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
-import seaborn as sns
+import pickle
+from flask import Flask, request, render_template
 from sklearn.preprocessing import LabelEncoder
-from sklearn.model_selection import train_test_split, GridSearchCV
+from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.naive_bayes import GaussianNB, MultinomialNB
-from sklearn.metrics import accuracy_score, classification_report
-import pickle
-from flask import Flask, request, render_template
+from sklearn.metrics import accuracy_score
 
 # ------------------------------------------
-# 📂 Load Data
+# 📂 Load and Preprocess Data
 # ------------------------------------------
 df = pd.read_csv('patient_data.csv')
 
+# Rename column if needed
 if 'C' in df.columns:
     df.rename(columns={'C': 'Gender'}, inplace=True)
 
-# Fix spelling issues in 'Stages'
+# Fix spelling in 'Stages'
 df['Stages'] = df['Stages'].replace({
     'HYPERTENSIVE CRISI': 'HYPERTENSIVE CRISIS',
     'HYPERTENSION (Stage-2).': 'HYPERTENSION (Stage-2)'
 })
 
-# ------------------------------------------
-# 🛠️ Encode Categorical Columns
-# ------------------------------------------
+# Encode Age ranges
 if 'Age' in df.columns:
     age_order = ['15-25', '25-35', '35-45', '45-55', '55-65', '65+']
-    age_map = {val: idx for idx, val in enumerate(age_order)}
-    df['Age'] = df['Age'].map(age_map)
+    df['Age'] = df['Age'].map({val: idx for idx, val in enumerate(age_order)})
     print("✅ 'Age' column converted to numeric.")
 
-label_encoder = LabelEncoder()
-columns = ['Gender', 'Severity', 'History', 'Patient', 'TakeMedication',
-           'Breathshortness', 'VisualChanges', 'NoseBleeding', 'ControlledDiet', 'Stages']
+# Encode categorical columns
+columns = ['Gender', 'History', 'Patient', 'TakeMedication', 'Severity',
+           'BreathShortness', 'VisualChanges', 'NoseBleeding',
+           'Whendiagnoused', 'Systolic', 'Diastolic', 'ControlledDiet', 'Stages']
 
+label_encoder = LabelEncoder()
 for col in columns:
     if col in df.columns:
         df[col] = label_encoder.fit_transform(df[col])
+        print(f"✅ Encoded: {col}")
     else:
-        print(f"⚠️ Column '{col}' not found in dataset.")
+        print(f"⚠️ Column '{col}' not found.")
+
+# Handle NaNs if any
+df.fillna(0, inplace=True)
+print("\n✅ After handling NaNs:\n", df.isnull().sum())
 
 # ------------------------------------------
-# 📦 Model Training
+# 📈 Model Training
 # ------------------------------------------
 X = df.drop('Stages', axis=1)
 Y = df['Stages']
+
 x_train, x_test, y_train, y_test = train_test_split(X, Y, test_size=0.2, random_state=30)
 
-# Logistic Regression
+# Train Models
 lr = LogisticRegression(max_iter=1000)
 lr.fit(x_train, y_train)
 acc_lr = accuracy_score(y_test, lr.predict(x_test))
 
-# Decision Tree
 dt = DecisionTreeClassifier()
 dt.fit(x_train, y_train)
 acc_dt = accuracy_score(y_test, dt.predict(x_test))
 
-# Random Forest
 rf = RandomForestClassifier()
 rf.fit(x_train, y_train)
 acc_rf = accuracy_score(y_test, rf.predict(x_test))
 
-# Gaussian NB
 gnb = GaussianNB()
 gnb.fit(x_train, y_train)
 acc_nb = accuracy_score(y_test, gnb.predict(x_test))
 
-# Multinomial NB
 mnb = MultinomialNB()
 mnb.fit(x_train, y_train)
 acc_mnb = accuracy_score(y_test, mnb.predict(x_test))
 
-# Accuracy Table
+# Show accuracy table
 model_scores = pd.DataFrame({
     'Model': [
         'Logistic Regression',
@@ -101,76 +101,61 @@ model_scores = pd.DataFrame({
 print("\nModel Accuracy Table:")
 print(model_scores)
 
-# ------------------------------------------
-# 🔍 Grid Search for Best Random Forest
-# ------------------------------------------
-param_grid = {
-    'n_estimators': [50, 100],
-    'max_depth': [None, 10, 20],
-    'min_samples_split': [2, 5],
-    'min_samples_leaf': [1, 2],
-}
-grid_search = GridSearchCV(RandomForestClassifier(), param_grid, cv=5, scoring='accuracy')
-grid_search.fit(x_train, y_train)
-print("\n🛠️ Best Parameters from GridSearch:")
-print(grid_search.best_params_)
-print("📈 Best CV Accuracy:", grid_search.best_score_)
-
-# Final Best Model
-best_rf = grid_search.best_estimator_
-print("\n✅ Tuned RF Test Accuracy:", accuracy_score(y_test, best_rf.predict(x_test)))
+# Save best model (Random Forest)
+pickle.dump(rf, open("model.pkl", "wb"))
 
 # ------------------------------------------
-# 💾 Save Best Model
+# 🌐 Flask Web App
 # ------------------------------------------
-pickle.dump(best_rf, open("model.pkl", "wb"))
-
-# ------------------------------------------
-# 🚀 FLASK APP DEPLOYMENT
-# ------------------------------------------
-app = Flask(__name__, static_url_path='/Flask/static')
-model = pickle.load(open('model.pkl', 'rb'))
+app = Flask(__name__, static_url_path='/static')
+model = pickle.load(open("model.pkl", "rb"))
 
 @app.route('/')
 def home():
     return render_template('index.html')
 
-@app.route('/predict', methods=["POST"])
+@app.route('/predict', methods=['POST'])
 def predict():
-    Gender = float(request.form["Gender"])
-    Age = float(request.form["Age"])
-    Patient = float(request.form['Patient'])
-    Severity = float(request.form['Severity'])
-    BreathShortness = float(request.form['BreathShortness'])
-    VisualChange = float(request.form['VisualChanges'])
-    NoseBleeding = float(request.form['NoseBleeding'])
-    Whendiagnoused = float(request.form['Whendiagnoused'])
-    Systolic = float(request.form['Systolic'])
-    Diastolic = float(request.form['Diastolic'])
-    ControlledDiet = float(request.form['ControlledDiet'])
+    try:
+        # Read all form inputs
+        Gender = float(request.form['Gender'])
+        Age = float(request.form['Age'])
+        History = float(request.form['History'])
+        Patient = float(request.form['Patient'])
+        TakeMedication = float(request.form['TakeMedication'])
+        Severity = float(request.form['Severity'])
+        BreathShortness = float(request.form['BreathShortness'])
+        VisualChanges = float(request.form['VisualChanges'])
+        NoseBleeding = float(request.form['NoseBleeding'])
+        Whendiagnoused = float(request.form['Whendiagnoused'])
+        Systolic = float(request.form['Systolic'])
+        Diastolic = float(request.form['Diastolic'])
+        ControlledDiet = float(request.form['ControlledDiet'])
 
-    # Prepare features
-    features_values = np.array([[Gender, Age, Patient, Severity, BreathShortness, VisualChange,
-                                 NoseBleeding, Whendiagnoused, Systolic, Diastolic, ControlledDiet]])
+        # Prepare input
+        features = np.array([[Gender, Age, History, Patient, TakeMedication,
+                              Severity, BreathShortness, VisualChanges,
+                              NoseBleeding, Whendiagnoused, Systolic, Diastolic, ControlledDiet]])
 
-    df_input = pd.DataFrame(features_values, columns=['Gender', 'Age', 'Patient', 'Severity',
-                            'BreathShortness', 'VisualChanges', 'NoseBleeding',
-                            'Whendiagnoused', 'Systolic', 'Diastolic', 'ControlledDiet'])
+        # Make prediction
+        prediction = model.predict(features)[0]
 
-    prediction = model.predict(df_input)
-    stage = prediction[0]
+        # Decode result
+        if prediction == 0:
+            result = "NORMAL"
+        elif prediction == 1:
+            result = "HYPERTENSION (Stage-1)"
+        elif prediction == 2:
+            result = "HYPERTENSION (Stage-2)"
+        else:
+            result = "HYPERTENSIVE CRISIS"
 
-    if stage == 0:
-        result = "NORMAL"
-    elif stage == 1:
-        result = "HYPERTENSION (Stage-1)"
-    elif stage == 2:
-        result = "HYPERTENSION (Stage-2)"
-    else:
-        result = "HYPERTENSIVE CRISIS"
+        return render_template("result.html", prediction_text="Your Blood Pressure stage is: " + result)
+    except Exception as e:
+        return render_template("result.html", prediction_text=f"❌ Error: {str(e)}")
 
-    text = "Your Blood Pressure stage is: "
-    return render_template("predict.html", prediction_text=text + result)
-
+# ------------------------------------------
+# 🚀 Run App
+# ------------------------------------------
 if __name__ == "__main__":
-    app.run(debug=False, port=5000)
+    app.run(debug=True)
