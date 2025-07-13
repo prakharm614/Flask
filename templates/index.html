@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Blood Pressure Prediction</title>
+</head>
+<body>
+    <h2>Blood Pressure Stage Prediction</h2>
+    <form action="/predict" method="POST">
+        Gender: <input type="text" name="Gender"><br>
+        Age: <input type="text" name="Age"><br>
+        Patient: <input type="text" name="Patient"><br>
+        Severity: <input type="text" name="Severity"><br>
+        BreathShortness: <input type="text" name="BreathShortness"><br>
+        VisualChanges: <input type="text" name="VisualChanges"><br>
+        NoseBleeding: <input type="text" name="NoseBleeding"><br>
+        Whendiagnoused: <input type="text" name="Whendiagnoused"><br>
+        Systolic: <input type="text" name="Systolic"><br>
+        Diastolic: <input type="text" name="Diastolic"><br>
+        ControlledDiet: <input type="text" name="ControlledDiet"><br>
+        <input type="submit" value="Predict">
+    </form>
+</body>
+</html>

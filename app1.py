@@ -12,17 +12,18 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.naive_bayes import GaussianNB, MultinomialNB
 from sklearn.metrics import accuracy_score, classification_report
+import pickle
+from flask import Flask, request, render_template
 
 # ------------------------------------------
 # 📂 Load Data
 # ------------------------------------------
 df = pd.read_csv('patient_data.csv')
 
-# Rename if needed
 if 'C' in df.columns:
     df.rename(columns={'C': 'Gender'}, inplace=True)
 
-# Fix spelling issues in Stages
+# Fix spelling issues in 'Stages'
 df['Stages'] = df['Stages'].replace({
     'HYPERTENSIVE CRISI': 'HYPERTENSIVE CRISIS',
     'HYPERTENSION (Stage-2).': 'HYPERTENSION (Stage-2)'
@@ -31,14 +32,12 @@ df['Stages'] = df['Stages'].replace({
 # ------------------------------------------
 # 🛠️ Encode Categorical Columns
 # ------------------------------------------
-# Convert Age ranges to numeric
 if 'Age' in df.columns:
     age_order = ['15-25', '25-35', '35-45', '45-55', '55-65', '65+']
     age_map = {val: idx for idx, val in enumerate(age_order)}
     df['Age'] = df['Age'].map(age_map)
     print("✅ 'Age' column converted to numeric.")
 
-# Encode remaining categorical columns
 label_encoder = LabelEncoder()
 columns = ['Gender', 'Severity', 'History', 'Patient', 'TakeMedication',
            'Breathshortness', 'VisualChanges', 'NoseBleeding', 'ControlledDiet', 'Stages']
@@ -50,97 +49,38 @@ for col in columns:
         print(f"⚠️ Column '{col}' not found in dataset.")
 
 # ------------------------------------------
-# 🔍 Dataset Summary
-# ------------------------------------------
-print("\n✅ Dataset Info:")
-print(df.info())
-print("\nMissing Values:\n", df.isnull().sum())
-print("\nDescriptive Statistics:\n", df.describe())
-
-# ------------------------------------------
-# 📊 EDA Plots
-# ------------------------------------------
-# Gender Distribution
-if 'Gender' in df.columns:
-    gender_counts = df['Gender'].value_counts()
-    plt.pie(gender_counts, labels=gender_counts.index, autopct="%1.0f%%", startangle=140)
-    plt.title('Gender Distribution')
-    plt.axis('equal')
-    plt.show()
-
-# Stage Frequency
-if 'Stages' in df.columns:
-    plt.figure(figsize=(6,6))
-    df['Stages'].value_counts().plot(kind='bar')
-    plt.xlabel('Stages')
-    plt.ylabel('Frequency')
-    plt.title('Count of Stages')
-    plt.show()
-
-# TakeMedication vs Severity
-if all(col in df.columns for col in ['TakeMedication', 'Severity']):
-    sns.countplot(x='TakeMedication', hue='Severity', data=df)
-    plt.title('TakeMedication vs Severity')
-    plt.show()
-
-# Pairplot (if columns exist)
-if all(col in df.columns for col in ['Age', 'Systolic', 'Diastolic']):
-    sns.pairplot(df[['Age', 'Systolic', 'Diastolic']])
-    plt.show()
-else:
-    print("⚠️ Skipping pairplot — Columns 'Age', 'Systolic', or 'Diastolic' not found.")
-
-# ------------------------------------------
 # 📦 Model Training
 # ------------------------------------------
 X = df.drop('Stages', axis=1)
 Y = df['Stages']
-
 x_train, x_test, y_train, y_test = train_test_split(X, Y, test_size=0.2, random_state=30)
 
 # Logistic Regression
-logistic_regression = LogisticRegression(max_iter=1000)
-logistic_regression.fit(x_train, y_train)
-y_pred_lr = logistic_regression.predict(x_test)
-acc_lr = accuracy_score(y_test, y_pred_lr)
-
-# Random Forest
-random_forest = RandomForestClassifier()
-random_forest.fit(x_train, y_train)
-y_pred_rf = random_forest.predict(x_test)
-acc_rf = accuracy_score(y_test, y_pred_rf)
+lr = LogisticRegression(max_iter=1000)
+lr.fit(x_train, y_train)
+acc_lr = accuracy_score(y_test, lr.predict(x_test))
 
 # Decision Tree
-decision_tree = DecisionTreeClassifier()
-decision_tree.fit(x_train, y_train)
-y_pred_dt = decision_tree.predict(x_test)
-acc_dt = accuracy_score(y_test, y_pred_dt)
+dt = DecisionTreeClassifier()
+dt.fit(x_train, y_train)
+acc_dt = accuracy_score(y_test, dt.predict(x_test))
 
-# Gaussian Naive Bayes
+# Random Forest
+rf = RandomForestClassifier()
+rf.fit(x_train, y_train)
+acc_rf = accuracy_score(y_test, rf.predict(x_test))
+
+# Gaussian NB
 gnb = GaussianNB()
 gnb.fit(x_train, y_train)
-y_pred_nb = gnb.predict(x_test)
-acc_nb = accuracy_score(y_test, y_pred_nb)
+acc_nb = accuracy_score(y_test, gnb.predict(x_test))
 
-# Multinomial Naive Bayes
+# Multinomial NB
 mnb = MultinomialNB()
 mnb.fit(x_train, y_train)
-y_pred_mnb = mnb.predict(x_test)
-acc_mnb = accuracy_score(y_test, y_pred_mnb)
+acc_mnb = accuracy_score(y_test, mnb.predict(x_test))
 
-# ------------------------------------------
-# 📊 Model Accuracy Comparison
-# ------------------------------------------
-print("\n🔍 Model Accuracy Comparison:")
-print(f"Logistic Regression:      {acc_lr:.4f}")
-print(f"Decision Tree Classifier: {acc_dt:.4f}")
-print(f"Random Forest Classifier: {acc_rf:.4f}")
-print(f"Gaussian Naive Bayes:     {acc_nb:.4f}")
-print(f"Multinomial Naive Bayes:  {acc_mnb:.4f}")
-
-# ------------------------------------------
-# 📊 Compare Scores in DataFrame
-# ------------------------------------------
+# Accuracy Table
 model_scores = pd.DataFrame({
     'Model': [
         'Logistic Regression',
@@ -148,25 +88,6 @@ model_scores = pd.DataFrame({
         'Random Forest Classifier',
         'Gaussian Naive Bayes',
         'Multinomial Naive Bayes'
-    ],
-    'Accuracy Score': [
-        acc_lr,
-        acc_dt,
-        acc_rf,
-        acc_nb,
-        acc_mnb
-    ]
-})
-# ------------------------------------------
-# 📊 Display Final Model Accuracy Table
-# ------------------------------------------
-model_scores = pd.DataFrame({
-    'Model': [
-        'Logistic Regression',
-        'Decision Tree Classifier',
-        'Random Forest Classifier',
-        'Gaussian Navie Bayes',
-        'Multinomial Navie Bayes'
     ],
     'Score': [
         round(acc_lr, 6),
@@ -181,7 +102,7 @@ print("\nModel Accuracy Table:")
 print(model_scores)
 
 # ------------------------------------------
-# 🎯 GridSearchCV for Random Forest
+# 🔍 Grid Search for Best Random Forest
 # ------------------------------------------
 param_grid = {
     'n_estimators': [50, 100],
@@ -189,43 +110,67 @@ param_grid = {
     'min_samples_split': [2, 5],
     'min_samples_leaf': [1, 2],
 }
-
 grid_search = GridSearchCV(RandomForestClassifier(), param_grid, cv=5, scoring='accuracy')
 grid_search.fit(x_train, y_train)
-
 print("\n🛠️ Best Parameters from GridSearch:")
 print(grid_search.best_params_)
 print("📈 Best CV Accuracy:", grid_search.best_score_)
 
-# Evaluate Tuned Random Forest
+# Final Best Model
 best_rf = grid_search.best_estimator_
-y_pred_best = best_rf.predict(x_test)
-print("\n✅ Tuned RF Test Accuracy:", accuracy_score(y_test, y_pred_best))
-print("\n📃 Classification Report:\n", classification_report(y_test, y_pred_best))
+print("\n✅ Tuned RF Test Accuracy:", accuracy_score(y_test, best_rf.predict(x_test)))
 
 # ------------------------------------------
-# 🔮 Prediction on Sample Row
+# 💾 Save Best Model
 # ------------------------------------------
-sample = x_test.iloc[0].values.reshape(1, -1)
-predicted_stage = best_rf.predict(sample)[0]
-print("\n📌 Predicted Stage for Sample Input:", predicted_stage)
+pickle.dump(best_rf, open("model.pkl", "wb"))
 
+# ------------------------------------------
+# 🚀 FLASK APP DEPLOYMENT
+# ------------------------------------------
+app = Flask(__name__, static_url_path='/Flask/static')
+model = pickle.load(open('model.pkl', 'rb'))
 
-# Deployment
-# saving the best model
-import pickle
-import warnings
-pickle.dump(random_forest,open("model.pkl","wb"))
-
-
-from flask import Flask, request, render_template
-
-app=Flask(__name__,static_url_path='/Flask/static')
-model= pickle.load(open('model.pkl','rb'))
-
-# Rendering HTML Page->route to display home page
-@app.route('/') 
+@app.route('/')
 def home():
     return render_template('index.html')
 
+@app.route('/predict', methods=["POST"])
+def predict():
+    Gender = float(request.form["Gender"])
+    Age = float(request.form["Age"])
+    Patient = float(request.form['Patient'])
+    Severity = float(request.form['Severity'])
+    BreathShortness = float(request.form['BreathShortness'])
+    VisualChange = float(request.form['VisualChanges'])
+    NoseBleeding = float(request.form['NoseBleeding'])
+    Whendiagnoused = float(request.form['Whendiagnoused'])
+    Systolic = float(request.form['Systolic'])
+    Diastolic = float(request.form['Diastolic'])
+    ControlledDiet = float(request.form['ControlledDiet'])
 
+    # Prepare features
+    features_values = np.array([[Gender, Age, Patient, Severity, BreathShortness, VisualChange,
+                                 NoseBleeding, Whendiagnoused, Systolic, Diastolic, ControlledDiet]])
+
+    df_input = pd.DataFrame(features_values, columns=['Gender', 'Age', 'Patient', 'Severity',
+                            'BreathShortness', 'VisualChanges', 'NoseBleeding',
+                            'Whendiagnoused', 'Systolic', 'Diastolic', 'ControlledDiet'])
+
+    prediction = model.predict(df_input)
+    stage = prediction[0]
+
+    if stage == 0:
+        result = "NORMAL"
+    elif stage == 1:
+        result = "HYPERTENSION (Stage-1)"
+    elif stage == 2:
+        result = "HYPERTENSION (Stage-2)"
+    else:
+        result = "HYPERTENSIVE CRISIS"
+
+    text = "Your Blood Pressure stage is: "
+    return render_template("predict.html", prediction_text=text + result)
+
+if __name__ == "__main__":
+    app.run(debug=False, port=5000)
